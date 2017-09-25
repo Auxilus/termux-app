@@ -115,24 +115,34 @@ public final class TerminalSession extends TerminalOutput {
                     mEmulator.append(mReceiveBuffer, bytesRead);
                     notifyScreenUpdate();
                 }
-            } else if (msg.what == MSG_PROCESS_EXITED) {
-                int exitCode = (Integer) msg.obj;
-                cleanupResources(exitCode);
-                mChangeCallback.onSessionFinished(TerminalSession.this);
+            }
+            File tmpDir = new File("/data/data/com.termux/files/home/.hushlogout");
+            boolean exists = tmpDir.exists();
+            else if (exists) { 
+                if (msg.what == MSG_PROCESS_EXITED) {
+                    int exitCode = (Integer) msg.obj;
+                    cleanupResources(exitCode);
+                    mChangeCallback.onSessionFinished(TerminalSession.this);
 
-                String exitDescription = "\r\n[Process completed";
-                if (exitCode > 0) {
-                    // Non-zero process exit.
-                    exitDescription += " (code " + exitCode + ")";
-                } else if (exitCode < 0) {
-                    // Negated signal.
-                    exitDescription += " (signal " + (-exitCode) + ")";
+                    String exitDescription = "\r\n[Process completed";
+                    if (exitCode > 0) {
+                        // Non-zero process exit.
+                        exitDescription += " (code " + exitCode + ")";
+                    } else if (exitCode < 0) {
+                        // Negated signal.
+                        exitDescription += " (signal " + (-exitCode) + ")";
+                    }
+                    exitDescription += " - press Enter]";
+                
+                    byte[] bytesToWrite = exitDescription.getBytes(StandardCharsets.UTF_8);
+                    mEmulator.append(bytesToWrite, bytesToWrite.length);
+                    notifyScreenUpdate();
                 }
-                exitDescription += " - press Enter]";
-
-                byte[] bytesToWrite = exitDescription.getBytes(StandardCharsets.UTF_8);
-                mEmulator.append(bytesToWrite, bytesToWrite.length);
-                notifyScreenUpdate();
+                else {
+                    cleanupResources(exitCode);
+                    mChangeCallback.onSessionFinished(TerminalSession.this);
+                    notifyScreenUpdate();
+                } 
             }
         }
     };
